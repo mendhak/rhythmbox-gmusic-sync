@@ -4,9 +4,6 @@ from gmusicsyncconfig import GMusicSyncConfigDialog
 from gmusicapi.api import Api
 
 class GMusicSync(GObject.Object, Peas.Activatable):
-    """
-    This is an 'empty' Rhythmbox plugin which invokes another Python script to control Rhythmbox.
-    """
 
     proc = None
     __gtype_name = 'GMusicSync'
@@ -66,17 +63,10 @@ class GMusicSync(GObject.Object, Peas.Activatable):
         self.db_entry_ids = (self.db.connect('entry-changed', self.entry_changed),
                              self.db.connect('entry-deleted', self.entry_deleted))
 
-        #TODO: hook into playing-changed.
-        #  Synchronize local and remote ratings
-        #  Increase or set playcount
         self.player_cb_ids = (  self.sp.connect('playing-song-changed', self.playing_entry_changed),)
 
 
     def playing_entry_changed (self, sp, entry):
-
-        #Match by title.  If other attributes differ, update changes
-        #Get local rating.  If remote rating doesn't exist, update changes
-        #Get playcount.  Update playcount. (PLAY_COUNT)
 
         if not entry or not self.enabled:
             return
@@ -112,41 +102,10 @@ class GMusicSync(GObject.Object, Peas.Activatable):
             self.api.change_song_metadata(song)
 
 
-
-#        print int(song['playCount'])
-#        print entry.get_ulong(RB.RhythmDBPropType.PLAY_COUNT)
-
-
-
-#
-#
-#        if entry is not None:
-#           try:
-#               print entry.get_string(RB.RhythmDBPropType.TITLE)
-#           except:
-#               print "Error getting title"
-#
-#           try:
-#               print entry.get_string(RB.RhythmDBPropType.ARTIST)
-#           except:
-#               print "Error getting artist"
-#
-#           try:
-#               currentRating = entry.get_double(RB.RhythmDBPropType.RATING)
-#           except:
-#               print "Error getting rating"
-#
-#           try:
-#               print entry.get_string(RB.RhythmDBPropType.ALBUM)
-#           except:
-#               print "Error getting album"
-
     def entry_deleted(self, entry, user_data):
+        #Not deleted off disk, just removed from the player
         if not self.enabled:
             return
-        #Not deleted off disk, just removed from the player
-        print user_data.get_string(RB.RhythmDBPropType.TITLE)
-
 
     def entry_changed(self, db, entry, changes):
         if not self.enabled:
