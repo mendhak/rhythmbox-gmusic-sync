@@ -70,6 +70,7 @@ class GMusicSync(GObject.Object, Peas.Activatable):
 
 
     def entry_changed(self, db, entry, changes):
+
         for i in range(0,changes.n_values):
             change = changes.get_nth(i)
             if change.prop is RB.RhythmDBPropType.ALBUM:
@@ -84,6 +85,36 @@ class GMusicSync(GObject.Object, Peas.Activatable):
                 print "New genre assigned is %s" % change.new
             if change.prop is RB.RhythmDBPropType.TITLE:
                 print "Title changed from %s to %s" % (change.old, change.new)
+                gsong = self.find_song(change.old)
+                print gsong
+
+    def find_song(self, title, artist=None, album=None, genre=None):
+
+        found = []
+
+        for song in self.allSongs:
+            if song['name'].lower() == title.lower():
+                found.append(song)
+
+        if len(found) > 1 and artist:
+            for song in found:
+                if not song['artist'].lower() == artist.lower():
+                    found.remove(song)
+
+        if len(found) > 1 and album:
+            for song in found:
+                if not song['album'].lower() == album.lower():
+                    found.remove(song)
+
+        if len(found) > 1 and genre:
+            for song in found:
+                if not song['genre'].lower() == genre.lower():
+                    found.remove(song)
+
+        if len(found) == 0:
+            return None
+
+        return found[0]
 
 
     def do_deactivate(self):
