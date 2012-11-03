@@ -13,6 +13,7 @@ class GMusicSync(GObject.Object, Peas.Activatable):
     object = GObject.property(type=GObject.Object)
 
     def do_activate(self):
+        self.enabled = True
         t = self.GMusicAPIThread(self.setup_listeners)
         t.start()
 
@@ -50,7 +51,8 @@ class GMusicSync(GObject.Object, Peas.Activatable):
 
 
     def setup_listeners(self, api):
-        db = self.object.props.db
+        self.db = self.object.props.db
+        self.sp = self.object.props.shell_player
 
         #Get list of songs from Google Music
         self.api = api
@@ -61,15 +63,92 @@ class GMusicSync(GObject.Object, Peas.Activatable):
         self.allSongs = self.api.get_all_songs()
         print "%s songs retrieved from Google Music" % len(self.allSongs)
 
-        self.db_entry_ids = (db.connect('entry-changed', self.entry_changed),
-                             db.connect('entry-deleted', self.entry_deleted))
+        self.db_entry_ids = (self.db.connect('entry-changed', self.entry_changed),
+                             self.db.connect('entry-deleted', self.entry_deleted))
+
+        #TODO: hook into playing-changed.
+        #  Synchronize local and remote ratings
+        #  Increase or set playcount
+        self.player_cb_ids = (  self.sp.connect('playing-song-changed', self.playing_entry_changed),)
+
+
+    def playing_entry_changed (self, sp, entry):
+
+        #Match by title.  If other attributes differ, update changes
+        #Get local rating.  If remote rating doesn't exist, update changes
+        #Get playcount.  Update playcount. (PLAY_COUNT)
+
+        if not entry or not self.enabled:
+            return
+
+        different = False
+
+        song = self.find_song(
+            entry.get_string(RB.RhythmDBPropType.TITLE),
+            entry.get_string(RB.RhythmDBPropType.ARTIST),
+            entry.get_string(RB.RhythmDBPropType.ALBUM),
+            entry.get_string(RB.RhythmDBPropType.GENRE))
+
+        if not song:
+            return
+
+        if song['artist'].lower() != entry.get_string(RB.RhythmDBPropType.ARTIST).lower():
+            different = True
+            song['artist'] = entry.get_string(RB.RhythmDBPropType.ARTIST)
+
+        if song['album'].lower() != entry.get_string(RB.RhythmDBPropType.ALBUM).lower():
+            different = True
+            song['album'] = entry.get_string(RB.RhythmDBPropType.ALBUM)
+
+        if song['genre'].lower() != entry.get_string(RB.RhythmDBPropType.GENRE).lower():
+            different = True
+            song['genre'] = entry.get_string(RB.RhythmDBPropType.GENRE)
+
+        if self.api.is_authenticated():
+            self.api.change_song_metadata(song)
+
+
+        #if int(entry.get_double(RB.RhythmDBPropType.RATING)) != int(song['rating']):
+
+#        print int(song['playCount'])
+#        print entry.get_ulong(RB.RhythmDBPropType.PLAY_COUNT)
+
+
+
+#
+#
+#        if entry is not None:
+#           try:
+#               print entry.get_string(RB.RhythmDBPropType.TITLE)
+#           except:
+#               print "Error getting title"
+#
+#           try:
+#               print entry.get_string(RB.RhythmDBPropType.ARTIST)
+#           except:
+#               print "Error getting artist"
+#
+#           try:
+#               currentRating = entry.get_double(RB.RhythmDBPropType.RATING)
+#           except:
+#               print "Error getting rating"
+#
+#           try:
+#               print entry.get_string(RB.RhythmDBPropType.ALBUM)
+#           except:
+#               print "Error getting album"
 
     def entry_deleted(self, entry, user_data):
+        if not self.enabled:
+            return
         #Not deleted off disk, just removed from the player
         print user_data.get_string(RB.RhythmDBPropType.TITLE)
 
 
     def entry_changed(self, db, entry, changes):
+        if not self.enabled:
+            return
+
         currentTitle = entry.get_string(RB.RhythmDBPropType.TITLE)
         currentAlbum = entry.get_string(RB.RhythmDBPropType.ALBUM)
         currentArtist = entry.get_string(RB.RhythmDBPropType.ARTIST)
@@ -101,7 +180,7 @@ class GMusicSync(GObject.Object, Peas.Activatable):
                 song = self.find_song(change.old, currentArtist, currentAlbum, currentGenre)
                 if song: song['name'] = change.new
 
-            if song:
+            if song and self.api.is_authenticated():
                 self.api.change_song_metadata(song)
 
             #Special case: delete
@@ -109,7 +188,8 @@ class GMusicSync(GObject.Object, Peas.Activatable):
             if change.prop is RB.RhythmDBPropType.HIDDEN:
                 print "Song %s was deleted from disk" % entry.get_string(RB.RhythmDBPropType.TITLE)
                 song = self.find_song(currentTitle, currentArtist, currentAlbum, currentGenre)
-                self.api.delete_songs(song["id"])
+                if song and self.api.is_authenticated():
+                    self.api.delete_songs(song["id"])
 
 
     def find_song(self, title, artist=None, album=None, genre=None):
@@ -144,5 +224,6 @@ class GMusicSync(GObject.Object, Peas.Activatable):
     def do_deactivate(self):
         if not self.api is None:
             self.api.logout()
+            self.enabled = False
 
 
