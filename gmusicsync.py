@@ -104,11 +104,14 @@ class GMusicSync(GObject.Object, Peas.Activatable):
             different = True
             song['genre'] = entry.get_string(RB.RhythmDBPropType.GENRE)
 
-        if self.api.is_authenticated():
+        if int(entry.get_double(RB.RhythmDBPropType.RATING)) != int(song['rating']):
+            different = True
+            song['rating'] = int(entry.get_double(RB.RhythmDBPropType.RATING))
+
+        if different and self.api.is_authenticated():
             self.api.change_song_metadata(song)
 
 
-        #if int(entry.get_double(RB.RhythmDBPropType.RATING)) != int(song['rating']):
 
 #        print int(song['playCount'])
 #        print entry.get_ulong(RB.RhythmDBPropType.PLAY_COUNT)
