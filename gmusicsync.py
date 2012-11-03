@@ -2,7 +2,7 @@ from gi.repository import GObject, Peas, RB
 
 
 
-class TrayIcon(GObject.Object, Peas.Activatable):
+class GMusicSync(GObject.Object, Peas.Activatable):
     """
     This is an 'empty' Rhythmbox plugin which invokes another Python script to control Rhythmbox.
     """
@@ -25,49 +25,25 @@ class TrayIcon(GObject.Object, Peas.Activatable):
 
     def entry_deleted(self, entry, user_data):
         print user_data.get_string(RB.RhythmDBPropType.TITLE)
-        try:
-            while True:
-                d = user_data.values
-                print d
-                user_data.remove(d)
-        except:
-            pass
+
 
     def entry_changed(self, db, entry, changes):
-        try:
-            while True:
-                change = changes.values
-                print change.prop
-                changes.remove(0)
-        except:
-            pass
 
-#        try:
-#            while True:
-#                  change = changes.values
-#
-#                  if change.prop is RB.RhythmDBPropType.ALBUM:
-#                      # called when the album of a entry is modified
-#                      self._entry_album_modified(entry, change.old, change.new)
-#
-#                  elif change.prop is RB.RhythmDBPropType.HIDDEN:
-#                      # called when an entry gets hidden (e.g.:the sound file is
-#                      # removed.
-#                      self._entry_hidden(db, entry, change.new)
-#
-#                  elif change.prop is RB.RhythmDBPropType.ARTIST:
-#                      # called when the artist of an entry gets modified
-#                      self._entry_artist_modified(entry, change.old, change.new)
-#
-#                  elif change.prop is RB.RhythmDBPropType.ALBUM_ARTIST:
-#                      # called when the album artist of an entry gets modified
-#                      self._entry_album_artist_modified(entry, change.new)
-#
-#                  # removes the last change from the GValueArray
-#                  changes.remove(0)
-#        except:
-#        # we finished reading the GValueArray
-#            pass
+        for i in range(0,changes.n_values):
+            change = changes.get_nth(i)
+            if change.prop is RB.RhythmDBPropType.ALBUM:
+                print "Album changed from %s to %s" % (change.old, change.new)
+            if change.prop is RB.RhythmDBPropType.HIDDEN:
+                print "Song %s was deleted from disk" % entry.get_string(RB.RhythmDBPropType.TITLE)
+            if change.prop is RB.RhythmDBPropType.ARTIST:
+                print "Artist was changed from %s to %s" % (change.old, change.new)
+            if change.prop is RB.RhythmDBPropType.RATING:
+                print "Assigned a rating of %s" % change.new
+            if change.prop is RB.RhythmDBPropType.GENRE:
+                print "New genre assigned is %s" % change.new
+            if change.prop is RB.RhythmDBPropType.TITLE:
+                print "Title changed from %s to %s" % (change.old, change.new)
+
 
     def playing_entry_property_changed(self, sp, uri, property, old, newvalue):
         if property != "playback-error":
