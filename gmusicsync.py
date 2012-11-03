@@ -1,4 +1,5 @@
 from gi.repository import GObject, Peas, RB, Gio
+import threading
 from gmusicsyncconfig import GMusicSyncConfigDialog
 from gmusicapi.api import Api
 
@@ -12,46 +13,56 @@ class GMusicSync(GObject.Object, Peas.Activatable):
     object = GObject.property(type=GObject.Object)
 
     def do_activate(self):
-        sp = self.object.props.shell_player
+        t = self.GMusicAPIThread(self.setup_listeners)
+        t.start()
+
+
+    class GMusicAPIThread(threading.Thread):
+        def __init__(self, cb):
+            threading.Thread.__init__(self)
+            self.callback = cb
+
+        def run(self):
+            api = Api()
+
+            #TODO: Handle the case of a GSettings schema not existing and warning the user.
+            settings = Gio.Settings("org.gnome.rhythmbox.plugins.gmusicsync")
+            username = settings['username']
+            password = settings['password']
+
+            if len(username) == 0 or len(password) == 0:
+                print "Credentials not supplied, cannot get information from Google Music"
+            else:
+
+                logged_in = False
+                attempts = 0
+
+                while not logged_in and attempts < 3:
+                    logged_in = api.login(username, password)
+                    attempts += 1
+
+                if not api.is_authenticated():
+                    print "Could not log in to Google Music with the supplied credentials."
+                else:
+                    print "Logged in to Google Music"
+
+            self.callback(api)
+
+
+    def setup_listeners(self, api):
         db = self.object.props.db
 
-        #TODO: Handle the case of a GSettings schema not existing and warning the user.
-        settings = Gio.Settings("org.gnome.rhythmbox.plugins.gmusicsync")
-        username = settings['username']
-        password = settings['password']
+        #Get list of songs from Google Music
+        self.api = api
 
-        if len(username) == 0 or len(password) == 0:
-            print "Credentials not supplied, cannot get information from Google Music"
+        if not self.api.is_authenticated():
             return
-        else:
-            api = self.get_gmusic_api(username, password)
-            if not api.is_authenticated():
-                print "Could not log in to Google Music with the supplied credentials."
-                return
-            else:
-                print "Logged in to Google Music"
 
-            allSongs = api.get_all_songs()
-
-
-        self.player_cb_ids = (
-                         sp.connect('playing-song-changed', self.playing_entry_changed),
-                         sp.connect('playing-song-property-changed', self.playing_entry_property_changed  ))
+        self.allSongs = self.api.get_all_songs()
+        print "%s songs retrieved from Google Music" % len(self.allSongs)
 
         self.db_entry_ids = (db.connect('entry-changed', self.entry_changed),
                              db.connect('entry-deleted', self.entry_deleted))
-
-
-    def get_gmusic_api(self, username, password):
-        api = Api()
-        logged_in = False
-        attempts = 0
-
-        while not logged_in and attempts < 3:
-            logged_in = api.login(username, password)
-            attempts += 1
-
-        return api
 
     def entry_deleted(self, entry, user_data):
         #Not deleted off disk, just removed from the player
@@ -59,7 +70,6 @@ class GMusicSync(GObject.Object, Peas.Activatable):
 
 
     def entry_changed(self, db, entry, changes):
-
         for i in range(0,changes.n_values):
             change = changes.get_nth(i)
             if change.prop is RB.RhythmDBPropType.ALBUM:
@@ -76,39 +86,8 @@ class GMusicSync(GObject.Object, Peas.Activatable):
                 print "Title changed from %s to %s" % (change.old, change.new)
 
 
-    def playing_entry_property_changed(self, sp, uri, property, old, newvalue):
-        if property != "playback-error":
-            print sp
-            print uri
-            print property
-            print old
-            print newvalue
-
-
-    def playing_entry_changed (self, sp, entry):
-        if entry is not None:
-            try:
-                print entry.get_string(RB.RhythmDBPropType.TITLE)
-            except:
-                print "Error getting title"
-
-            try:
-                print entry.get_string(RB.RhythmDBPropType.ARTIST)
-            except:
-                print "Error getting artist"
-
-            try:
-                print entry.get_double(RB.RhythmDBPropType.RATING)
-            except:
-                print "Error getting rating"
-
-            try:
-                print entry.get_string(RB.RhythmDBPropType.ALBUM)
-            except:
-                print "Error getting album"
-
-
     def do_deactivate(self):
-        pass
+        if not self.api is None:
+            self.api.logout()
 
 
