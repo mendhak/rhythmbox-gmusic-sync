@@ -1,6 +1,5 @@
 from gi.repository import GObject, Peas, RB
-
-
+from gmusicsyncconfig import GMusicSyncConfigDialog
 
 class GMusicSync(GObject.Object, Peas.Activatable):
     """
@@ -24,6 +23,7 @@ class GMusicSync(GObject.Object, Peas.Activatable):
 
 
     def entry_deleted(self, entry, user_data):
+        #Not deleted off disk, just removed from the player
         print user_data.get_string(RB.RhythmDBPropType.TITLE)
 
 
@@ -79,3 +79,5 @@ class GMusicSync(GObject.Object, Peas.Activatable):
 
     def do_deactivate(self):
         pass
+
+

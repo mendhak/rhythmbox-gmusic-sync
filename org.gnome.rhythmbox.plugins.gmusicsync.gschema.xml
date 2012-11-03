@@ -1,0 +1,14 @@
+<schemalist>
+  <schema id="gmusicsync.plugins" path="/gmusicsync/plugins/">
+    <key name="username" type="s">
+      <default>''</default>
+      <summary>Username</summary>
+      <description>Username</description>
+    </key>
+    <key name="password" type="s">
+      <default>''</default>
+      <summary>Password</summary>
+      <description>Password</description>
+    </key>
+  </schema>
+</schemalist>
