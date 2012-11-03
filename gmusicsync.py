@@ -84,10 +84,6 @@ class GMusicSync(GObject.Object, Peas.Activatable):
                 print "Album changed from %s to %s" % (change.old, change.new)
                 song = self.find_song(currentTitle, currentArtist, change.old, currentGenre)
                 if song: song['album'] = change.new
-            if change.prop is RB.RhythmDBPropType.HIDDEN:
-                print "Song %s was deleted from disk" % entry.get_string(RB.RhythmDBPropType.TITLE)
-                song = self.find_song(currentTitle, currentArtist, currentAlbum, currentGenre)
-                #TODO: Delete song
             if change.prop is RB.RhythmDBPropType.ARTIST:
                 print "Artist was changed from %s to %s" % (change.old, change.new)
                 song = self.find_song(currentTitle, change.old, currentAlbum, currentGenre)
@@ -107,6 +103,14 @@ class GMusicSync(GObject.Object, Peas.Activatable):
 
             if song:
                 self.api.change_song_metadata(song)
+
+            #Special case: delete
+            #TODO: Make this a checkbox in settings screen
+            if change.prop is RB.RhythmDBPropType.HIDDEN:
+                print "Song %s was deleted from disk" % entry.get_string(RB.RhythmDBPropType.TITLE)
+                song = self.find_song(currentTitle, currentArtist, currentAlbum, currentGenre)
+                self.api.delete_songs(song["id"])
+
 
     def find_song(self, title, artist=None, album=None, genre=None):
 
