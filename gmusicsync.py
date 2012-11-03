@@ -24,7 +24,14 @@ class TrayIcon(GObject.Object, Peas.Activatable):
 
 
     def entry_deleted(self, entry, user_data):
-        print entry.get_string(RB.RhythmDBPropType.TITLE)
+        print user_data.get_string(RB.RhythmDBPropType.TITLE)
+        try:
+            while True:
+                d = user_data.values
+                print d
+                user_data.remove(d)
+        except:
+            pass
 
     def entry_changed(self, db, entry, changes):
         try:
