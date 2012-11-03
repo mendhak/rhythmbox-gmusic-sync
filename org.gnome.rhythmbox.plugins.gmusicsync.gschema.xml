@@ -1,5 +1,5 @@
 <schemalist>
-  <schema id="gmusicsync.plugins" path="/gmusicsync/plugins/">
+  <schema id="org.gnome.rhythmbox.plugins.gmusicsync" path="/org/gnome/rhythmbox/plugins/gmusicsync/">
     <key name="username" type="s">
       <default>''</default>
       <summary>Username</summary>
