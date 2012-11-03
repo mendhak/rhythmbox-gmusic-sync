@@ -1,4 +1,4 @@
-from gi.repository import GObject, Peas, RB
+from gi.repository import GObject, Peas, RB, Gio
 from gmusicsyncconfig import GMusicSyncConfigDialog
 
 class GMusicSync(GObject.Object, Peas.Activatable):
@@ -13,6 +13,17 @@ class GMusicSync(GObject.Object, Peas.Activatable):
     def do_activate(self):
         sp = self.object.props.shell_player
         db = self.object.props.db
+
+        #TODO: Handle the case of a GSettings schema not existing and warning the user.
+        settings = Gio.Settings("org.gnome.rhythmbox.plugins.gmusicsync")
+        username = settings['username']
+        password = settings['password']
+
+        if len(username) == 0 or len(password) == 0:
+            print "Credentials not supplied, cannot get information from Google Music"
+            return
+
+
 
         self.player_cb_ids = (
                          sp.connect('playing-song-changed', self.playing_entry_changed),
