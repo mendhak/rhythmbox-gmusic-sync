@@ -70,23 +70,43 @@ class GMusicSync(GObject.Object, Peas.Activatable):
 
 
     def entry_changed(self, db, entry, changes):
+        currentTitle = entry.get_string(RB.RhythmDBPropType.TITLE)
+        currentAlbum = entry.get_string(RB.RhythmDBPropType.ALBUM)
+        currentArtist = entry.get_string(RB.RhythmDBPropType.ARTIST)
+        currentGenre = entry.get_string(RB.RhythmDBPropType.GENRE)
+
 
         for i in range(0,changes.n_values):
             change = changes.get_nth(i)
+            song = None
+
             if change.prop is RB.RhythmDBPropType.ALBUM:
                 print "Album changed from %s to %s" % (change.old, change.new)
+                song = self.find_song(currentTitle, currentArtist, change.old, currentGenre)
+                if song: song['album'] = change.new
             if change.prop is RB.RhythmDBPropType.HIDDEN:
                 print "Song %s was deleted from disk" % entry.get_string(RB.RhythmDBPropType.TITLE)
+                song = self.find_song(currentTitle, currentArtist, currentAlbum, currentGenre)
+                #TODO: Delete song
             if change.prop is RB.RhythmDBPropType.ARTIST:
                 print "Artist was changed from %s to %s" % (change.old, change.new)
+                song = self.find_song(currentTitle, change.old, currentAlbum, currentGenre)
+                if song: song['artist'] = change.new
             if change.prop is RB.RhythmDBPropType.RATING:
                 print "Assigned a rating of %s" % change.new
+                song = self.find_song(currentTitle, currentArtist, currentAlbum, currentGenre)
+                if song: song['rating'] = change.new
             if change.prop is RB.RhythmDBPropType.GENRE:
                 print "New genre assigned is %s" % change.new
+                song = self.find_song(currentTitle, currentArtist, currentAlbum, change.old)
+                if song: song['genre'] = change.new
             if change.prop is RB.RhythmDBPropType.TITLE:
                 print "Title changed from %s to %s" % (change.old, change.new)
-                gsong = self.find_song(change.old)
-                print gsong
+                song = self.find_song(change.old, currentArtist, currentAlbum, currentGenre)
+                if song: song['name'] = change.new
+
+            if song:
+                self.api.change_song_metadata(song)
 
     def find_song(self, title, artist=None, album=None, genre=None):
 
