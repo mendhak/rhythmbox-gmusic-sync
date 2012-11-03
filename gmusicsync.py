@@ -1,5 +1,6 @@
 from gi.repository import GObject, Peas, RB, Gio
 from gmusicsyncconfig import GMusicSyncConfigDialog
+from gmusicapi.api import Api
 
 class GMusicSync(GObject.Object, Peas.Activatable):
     """
@@ -22,7 +23,15 @@ class GMusicSync(GObject.Object, Peas.Activatable):
         if len(username) == 0 or len(password) == 0:
             print "Credentials not supplied, cannot get information from Google Music"
             return
+        else:
+            api = self.get_gmusic_api(username, password)
+            if not api.is_authenticated():
+                print "Could not log in to Google Music with the supplied credentials."
+                return
+            else:
+                print "Logged in to Google Music"
 
+            allSongs = api.get_all_songs()
 
 
         self.player_cb_ids = (
@@ -32,6 +41,17 @@ class GMusicSync(GObject.Object, Peas.Activatable):
         self.db_entry_ids = (db.connect('entry-changed', self.entry_changed),
                              db.connect('entry-deleted', self.entry_deleted))
 
+
+    def get_gmusic_api(self, username, password):
+        api = Api()
+        logged_in = False
+        attempts = 0
+
+        while not logged_in and attempts < 3:
+            logged_in = api.login(username, password)
+            attempts += 1
+
+        return api
 
     def entry_deleted(self, entry, user_data):
         #Not deleted off disk, just removed from the player
