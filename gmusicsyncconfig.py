@@ -20,10 +20,17 @@ class GMusicSyncConfigDialog(GObject.Object, PeasGtk.Configurable):
                 self.password.set_visibility(False)
                 self.password.set_text(self.settings['password'])
 
+                self.allowdelete = self.ui.get_object("delete_entry")
+                self.allowdelete.set_active(self.settings['deleteongmusic'])
+
                 self.username.connect('changed', self.username_changed_cb)
                 self.password.connect('changed', self.password_changed_cb)
+                self.allowdelete.connect('toggled', self.allowdelete_changed)
 
                 return self.config_dialog
+
+        def allowdelete_changed(self, widget):
+            self.settings['deleteongmusic'] = self.allowdelete.get_active()
 
         def username_changed_cb(self, widget):
                 self.settings['username'] = self.username.get_text()

@@ -10,5 +10,10 @@
       <summary>Password</summary>
       <description>Password</description>
     </key>
+    <key name="deleteongmusic" type="b">
+        <default>false</default>
+        <summary>DeleteOnGMusic</summary>
+        <description>Whether to perform deletes on Google Music</description>
+    </key>
   </schema>
 </schemalist>

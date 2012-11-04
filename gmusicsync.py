@@ -10,25 +10,28 @@ class GMusicSync(GObject.Object, Peas.Activatable):
     object = GObject.property(type=GObject.Object)
 
     def do_activate(self):
+        #TODO: Handle the case of a GSettings schema not existing and warning the user.
+        self.settings = Gio.Settings("org.gnome.rhythmbox.plugins.gmusicsync")
+        self.allowDelete = self.settings['deleteongmusic']
+        username = self.settings['username']
+        password = self.settings['password']
+
         self.enabled = True
-        t = self.GMusicAPIThread(self.setup_listeners)
+        t = self.GMusicAPIThread(username, password, self.setup_listeners)
         t.start()
 
 
     class GMusicAPIThread(threading.Thread):
-        def __init__(self, cb):
+        def __init__(self, username, password, cb):
             threading.Thread.__init__(self)
             self.callback = cb
+            self.username = username
+            self.password = password
 
         def run(self):
             api = Api()
 
-            #TODO: Handle the case of a GSettings schema not existing and warning the user.
-            settings = Gio.Settings("org.gnome.rhythmbox.plugins.gmusicsync")
-            username = settings['username']
-            password = settings['password']
-
-            if len(username) == 0 or len(password) == 0:
+            if len(self.username) == 0 or len(self.password) == 0:
                 print "Credentials not supplied, cannot get information from Google Music"
             else:
 
@@ -36,7 +39,7 @@ class GMusicSync(GObject.Object, Peas.Activatable):
                 attempts = 0
 
                 while not logged_in and attempts < 3:
-                    logged_in = api.login(username, password)
+                    logged_in = api.login(self.username, self.password)
                     attempts += 1
 
                 if not api.is_authenticated():
@@ -146,8 +149,7 @@ class GMusicSync(GObject.Object, Peas.Activatable):
                 self.api.change_song_metadata(song)
 
             #Special case: delete
-            #TODO: Make this a checkbox in settings screen
-            if change.prop is RB.RhythmDBPropType.HIDDEN:
+            if self.allowDelete and change.prop is RB.RhythmDBPropType.HIDDEN:
                 print "Song %s was deleted from disk" % entry.get_string(RB.RhythmDBPropType.TITLE)
                 song = self.find_song(currentTitle, currentArtist, currentAlbum, currentGenre)
                 if song and self.api.is_authenticated():
