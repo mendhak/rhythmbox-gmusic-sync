@@ -82,15 +82,15 @@ class GMusicSync(GObject.Object, Peas.Activatable):
         if not song:
             return
 
-        if song['artist'].lower() != entry.get_string(RB.RhythmDBPropType.ARTIST).lower():
+        if song['artist'].encode('utf8').lower() != entry.get_string(RB.RhythmDBPropType.ARTIST).lower():
             different = True
             song['artist'] = entry.get_string(RB.RhythmDBPropType.ARTIST)
 
-        if song['album'].lower() != entry.get_string(RB.RhythmDBPropType.ALBUM).lower():
+        if song['album'].encode('utf8').lower() != entry.get_string(RB.RhythmDBPropType.ALBUM).lower():
             different = True
             song['album'] = entry.get_string(RB.RhythmDBPropType.ALBUM)
 
-        if song['genre'].lower() != entry.get_string(RB.RhythmDBPropType.GENRE).lower():
+        if song['genre'].encode('utf8').lower() != entry.get_string(RB.RhythmDBPropType.GENRE).lower():
             different = True
             song['genre'] = entry.get_string(RB.RhythmDBPropType.GENRE)
 
@@ -159,22 +159,22 @@ class GMusicSync(GObject.Object, Peas.Activatable):
         found = []
 
         for song in self.allSongs:
-            if song['name'].lower() == title.lower():
+            if song['name'].encode('utf8').lower() == title.lower():
                 found.append(song)
 
         if len(found) > 1 and artist:
             for song in found:
-                if not song['artist'].lower() == artist.lower():
+                if not song['artist'].encode('utf8').lower() == artist.lower():
                     found.remove(song)
 
         if len(found) > 1 and album:
             for song in found:
-                if not song['album'].lower() == album.lower():
+                if not song['album'].encode('utf8').lower() == album.lower():
                     found.remove(song)
 
         if len(found) > 1 and genre:
             for song in found:
-                if not song['genre'].lower() == genre.lower():
+                if not song['genre'].encode('utf8').lower() == genre.lower():
                     found.remove(song)
 
         if len(found) == 0:
