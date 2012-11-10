@@ -1,6 +1,7 @@
 
 # Copy files to ~/.local/share/plugins/rhythmbox/gmusicsync
-# TODO: Implement this copying
+mkdir -p ~/.local/share/rhythmbox/plugins/gmusicsync/
+cp -rf * ~/.local/share/rhythmbox/plugins/gmusicsync/
 
 #Install pip and gmusicapi
 sudo apt-get install python-pip
