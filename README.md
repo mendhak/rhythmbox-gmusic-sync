@@ -27,6 +27,8 @@ Click on preferences and enter your Google account username and password.
 
 ![GMusic username password](http://farm9.staticflickr.com/8062/8215042168_132a0c8ea7_o.png)
 
+**Finally, restart Rhythmbox.**
+
 Keep in mind
 ===
 
